@@ -1,8 +1,8 @@
-# deduplicate-images
+## deduplicate-images
 
 A small project in Python to remove duplicate images.
 
-## Reason for this project
+# Reason for this project
 
 As a software developer, I wanted to exercise my Python skills and create a solution for removing duplicate images. Rather than relying on existing software, I decided to write my own tool to gain hands-on experience and tailor it to my specific needs.
 
@@ -44,4 +44,70 @@ Below are the steps I took to make this small project:
 
 10. **GUI app** - Combined both scripts into a single standalone application with a home screen, Find/Review/Remove screens, background threading with live progress, and startup logic tests. Packaged as a .exe using PyInstaller.
 
-Note: As of this update, testing and general optimization are still in progress to further improve the performance and user experience of the application.
+Note: As of February 27, 2026, testing and general optimization are still in progress to further improve the performance and user experience of the application.
+
+## Requirements
+
+Python 3.8 or higher.
+
+```
+python -m pip install Pillow imagehash numpy tqdm
+```
+
+## Script 1 - Find Duplicates
+
+Scans a folder recursively, computes perceptual hashes for every image, and finds similar pairs. Results are saved to `similar_photos.csv` in the same folder as the script.
+
+Basic usage:
+
+```
+python find_similar_photos.py "C:\path\to\your\photos"
+```
+
+With options:
+
+```
+python find_similar_photos.py "C:\Photos" --threshold 8 --output "C:\Photos\results.csv" --workers 4 --resume
+```
+
+Options:
+| Flag | Description | Default |
+| --- | --- | --- |
+| `--threshold` | Similarity cutoff (0-64, lower = stricter match) | `10` |
+| `--output` | Path for the output CSV file | Same folder as script |
+| `--workers` | Number of CPU cores to use | All cores minus one |
+| `--resume` | Reuse cached hashes from a previous run (skips already-hashed files) | Off |
+
+Output files:
+* `similar_photos.csv` - pairs of similar images
+* `photo_hashes_cache.npz` - hash cache (used when `--resume` is passed on a future run)
+
+## Script 2 - Review Duplicates
+
+Opens `similar_photos.csv` and lets you compare each pair side-by-side in a window. You decide which image to keep and which to remove.
+
+Usage:
+
+```
+python review_duplicates.py
+```
+
+The script reads `similar_photos.csv` from the same folder automatically. To specify a different CSV:
+
+```
+python review_duplicates.py "C:\path\to\results.csv"
+```
+
+Keyboard controls:
+| Key | Action |
+| --- | --- |
+| `1` | Keep left image, move right to removed folder |
+| `2` | Keep right image, move left to removed folder |
+| `3` | Skip - images are not actually duplicates |
+| `B` | Go back to previous pair (undoes the last move) |
+| `Esc` | Quit and save progress |
+
+Notes:
+* Removed files are moved to `duplicates_removed` on your Desktop - they are not permanently deleted.
+* Progress is saved automatically after every decision. If you quit mid-way through, the next run will ask if you want to resume where you left off.
+* Pairs where one image was already removed by a previous decision are skipped automatically.
